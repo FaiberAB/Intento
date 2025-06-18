@@ -1,16 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("form");
+  const form        = document.querySelector("form");
   const resultadoDiv = document.querySelector(".resultados");
-  const errorDiv = document.querySelector(".error");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
+  const errorDiv     = document.querySelector(".error");
+  const canvas       = document.getElementById("canvas");
+  const ctx          = canvas.getContext("2d");
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    const anguloA = parseFloat(form.anguloA.value);
-    const anguloB = parseFloat(form.anguloB.value);
-    const masa    = parseFloat(form.masa.value);
+    // Leemos valores como Number, con decimales
+    const anguloA = form.anguloA.valueAsNumber;
+    const anguloB = form.anguloB.valueAsNumber;
+    const masa    = form.masa.valueAsNumber;
     const g       = 10;
     const peso    = masa * g;
 
@@ -18,16 +19,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const a = anguloA * Math.PI / 180;
       const b = anguloB * Math.PI / 180;
 
-      // Newton-Raphson para resolver t2
+      // Derivada numérica
       function derivada(fn, x, h = 1e-5) {
         return (fn(x + h) - fn(x - h)) / (2 * h);
       }
 
+      // Función de la ecuación para t2
       function f_T2(t2) {
         const t1 = (-Math.cos(b) * t2) / Math.cos(a);
         return (t1 * Math.sin(a) + t2 * Math.sin(b)) - peso;
       }
 
+      // Newton-Raphson para encontrar t2
       function encontrarT2(fn, guess = 10, tol = 1e-4, maxIter = 100) {
         let t2 = guess;
         for (let i = 0; i < maxIter; i++) {
@@ -50,31 +53,34 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Tensión 3 (peso):</strong> ${t3.toFixed(2)} N</p>
       `;
       resultadoDiv.style.display = "block";
-      errorDiv.textContent = "";
+      errorDiv.textContent       = "";
 
-      // Dibujar tensiones
+      // Dibujar gráfico
       dibujarGrafico(a, b);
     } catch (err) {
-      errorDiv.textContent = "Error en los cálculos: " + err.message;
+      errorDiv.textContent       = "Error en los cálculos: " + err.message;
       resultadoDiv.style.display = "none";
     }
   });
 
   function dibujarGrafico(a, b) {
-    const w = canvas.width, h = canvas.height;
+    const w   = canvas.width;
+    const h   = canvas.height;
+    const cx  = w / 2;
+    const cy  = h / 2;
+    const esc = 100;
+
     ctx.clearRect(0, 0, w, h);
-    const cx = w/2, cy = h/2, esc = 100;
+    ctx.lineWidth = 3;
+    ctx.font      = "bold 14px sans-serif";
 
     const vects = [
-      { x:  Math.cos(a)*esc, y: -Math.sin(a)*esc, col:"blue",  ang:a, label:"T1" },
-      { x:  Math.cos(b)*esc, y: -Math.sin(b)*esc, col:"green", ang:b, label:"T2" },
-      { x:  0,               y:  esc,            col:"red",   ang:3*Math.PI/2, label:"T3" }
+      { x:  Math.cos(a)*esc, y: -Math.sin(a)*esc, col:"blue",  ang:a },
+      { x:  Math.cos(b)*esc, y: -Math.sin(b)*esc, col:"green", ang:b },
+      { x:  0,               y:  esc,            col:"red",   ang:3*Math.PI/2 }
     ];
 
-    ctx.lineWidth = 3;
-    ctx.font = "bold 14px sans-serif";
-
-    for (let v of vects) {
+    vects.forEach(v => {
       ctx.strokeStyle = v.col;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
@@ -84,6 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.fillStyle = v.col;
       const grados = (v.ang * 180/Math.PI).toFixed(1) + "°";
       ctx.fillText(grados, cx + v.x*0.6, cy + v.y*0.6);
-    }
+    });
   }
 });
